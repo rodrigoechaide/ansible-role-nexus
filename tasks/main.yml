@@ -1,2 +1,19 @@
 ---
-# tasks file for ansible-role-mattermost
+
+- name: Pull nexus3 docker image
+  docker_image:
+    name: sonatype/nexus3:{{ docker_nexus3_version }}
+    source: pull
+
+- name: Service configuration
+  template:
+    src: docker-nexus3.j2
+    dest: /etc/init.d/docker-nexus3
+    mode: ugo+x
+  register: docker_nexus3_service 
+  notify: restart docker-nexus3
+
+- name: just force systemd to reread configs (2.4 and above)
+  systemd:
+    daemon_reload: yes
+  when: docker_nexus3_service.changed

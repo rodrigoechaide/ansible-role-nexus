@@ -1,0 +1,141 @@
+{% raw -%}
+#!/bin/sh
+
+#    /etc/rc.d/init.d/<servicename>
+#
+#    Daemon for nexus3
+#
+# chkconfig: 2345 97 15
+# description: Docker container for nexus3
+
+
+### BEGIN INIT INFO
+# Provides:       docker-nexus3
+# Required-Start: $network docker
+# Required-Stop: $network docker
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop:  0 1 6
+# Short-Description: start and stop docker container for nexus3
+# Description: Docker container for nexus3
+### END INIT INFO
+
+if [ -e /etc/init.d/functions ]; then
+    . /etc/init.d/functions
+elif [ -e /lib/lsb/init-functions ]; then
+    . /lib/lsb/init-functions
+    failure() {
+        log_failure_msg "$@"
+        return 1
+    }
+    success() {
+        log_success_msg "$@"
+        return 0
+    }
+else
+    failure() {
+        echo "fail: $@" >&2
+        exit 1
+    }
+    success() {
+        echo "success: $@" >&2
+        exit 0
+    }
+fi
+
+export HOME=/root/
+docker="/usr/bin/docker"
+prog="docker-nexus3"
+if [ -d /var/lock/subsys ]; then
+    lockfile="/var/lock/subsys/$prog"
+else
+    unset lockfile
+fi
+
+start() {
+    [ -x $docker ] || exit 5
+
+    if [ "true" = "$($docker inspect --format='{{.State.Running}}' nexus3)" ]; then
+       failure
+       printf "Container nexus3 is still running.\n"
+       exit 7
+    fi
+
+    printf "Starting $prog:\t"
+    $docker rm nexus3 >/dev/null 2>&1
+        $docker run \
+    --net bridge -m 0b --detach=true -p 8082:8081 -p 9080:9080 -p 9081:9081 -p 9082:9082 -p 9443:9443 -v /var/nexus3:/nexus-data -v /var/nexus3-cms:/nexus-data-cms --restart=always \
+    --name nexus3 \
+{% endraw %}
+    sonatype/nexus3:{{ docker_nexus3_version }} \
+{% raw %}
+
+    retval=$?
+    echo
+    if [ $retval -eq 0 ]; then
+        success
+    else
+        failure
+    fi
+}
+
+stop() {
+    echo -n "Stopping $prog: "
+    $docker stop nexus3
+#    $docker rm nexus3
+    return $?
+}
+
+clean() {
+    if ! [ -f $cidfile ]; then
+        failure
+        echo
+        printf "$cidfile does not exist.\n"
+    else
+        cid="$(cat $cidfile)"
+  rm $cidfile
+        $docker rm -f $cid
+        retval=$?
+        return $retval
+    fi
+}
+
+case "$1" in
+    start)
+    start
+    ;;
+    stop)
+    stop
+    ;;
+    status)
+    if [ "true" = "$($docker inspect --format='{{.State.Running}}' nexus3)" ]; then
+        echo $prog is running
+        exit 0
+    else
+        echo $prog not running
+        exit 1
+    fi
+    ;;
+    restart|reload)
+    stop
+    start
+    ;;
+    clean)
+    clean
+    ;;
+    cleanRestart)
+    stop
+    clean
+    start
+    ;;
+    condrestart)
+    [ -f /var/lock/subsys/$prog ] && restart || :
+    ;;
+    *)
+    echo "Usage: $0 [start|stop|status|reload|restart|probe|clean|cleanRestart]"
+    exit 1
+    ;;
+esac
+exit $?
+{% endraw %}

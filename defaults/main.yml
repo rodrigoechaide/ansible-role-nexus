@@ -1,2 +1,3 @@
 ---
-# defaults file for ansible-role-mattermost
+
+docker_nexus3_version: latest

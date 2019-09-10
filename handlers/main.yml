@@ -1,2 +1,18 @@
 ---
-# handlers file for ansible-role-mattermost
+- name: start docker-nexus3
+  service: 
+    name: docker-nexus3
+    state: started
+  become: yes
+
+- name: stop docker-nexus3
+  service:
+    name: docker-nexus3
+    state: stopped
+  become: yes
+
+- name: restart docker-nexus3
+  service:
+    name: docker-nexus3
+    state: restarted
+  become: yes
