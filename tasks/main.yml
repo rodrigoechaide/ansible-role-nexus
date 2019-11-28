@@ -10,10 +10,7 @@
     src: docker-nexus3.j2
     dest: /etc/init.d/docker-nexus3
     mode: ugo+x
-  register: docker_nexus3_service 
-  notify: restart docker-nexus3
-
-- name: just force systemd to reread configs (2.4 and above)
-  systemd:
-    daemon_reload: yes
-  when: docker_nexus3_service.changed
+  register: docker_nexus3_service
+  notify:
+    - restart-docker-nexus3
+    - systemd-daemon-reload

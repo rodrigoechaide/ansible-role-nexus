@@ -1,6 +1,6 @@
 ---
 - name: start docker-nexus3
-  service: 
+  service:
     name: docker-nexus3
     state: started
   become: yes
@@ -11,8 +11,12 @@
     state: stopped
   become: yes
 
-- name: restart docker-nexus3
+- name: restart-docker-nexus3
   service:
     name: docker-nexus3
     state: restarted
   become: yes
+
+- name: systemd-daemon-reload
+  systemd:
+    daemon_reload: yes
